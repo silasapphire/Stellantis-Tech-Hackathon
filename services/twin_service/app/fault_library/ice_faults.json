@@ -1,0 +1,56 @@
+[
+  {
+    "id": "oil_pressure_low",
+    "field": "oil_pressure",
+    "operator": "<",
+    "threshold": 20.0,
+    "severity": "high",
+    "type": "lubrication_anomaly",
+    "message": "Oil pressure at {value:.1f} psi is below the {threshold:.0f} psi safe minimum — risk of accelerated bearing wear."
+  },
+  {
+    "id": "oil_overtemp",
+    "field": "oil_temp",
+    "operator": ">",
+    "threshold": 130.0,
+    "severity": "medium",
+    "type": "lubrication_anomaly",
+    "message": "Oil temperature at {value:.1f}°C exceeds the {threshold:.0f}°C safe limit — oil breakdown risk increases lubrication wear."
+  },
+  {
+    "id": "coolant_overtemp",
+    "field": "coolant_temp",
+    "operator": ">",
+    "threshold": 105.0,
+    "severity": "high",
+    "type": "cooling_anomaly",
+    "message": "Coolant temperature at {value:.1f}°C exceeds the {threshold:.0f}°C safe limit — risk of head gasket damage."
+  },
+  {
+    "id": "vibration_high",
+    "field": "vibration_index",
+    "operator": ">",
+    "threshold": 7.0,
+    "severity": "medium",
+    "type": "mechanical_wear_anomaly",
+    "message": "Vibration index at {value:.1f} exceeds the {threshold:.1f} baseline — indicates possible mount, bearing, or balance wear."
+  },
+  {
+    "id": "misfire_detected",
+    "field": "misfire_count",
+    "operator": ">",
+    "threshold": 5,
+    "severity": "high",
+    "type": "combustion_anomaly",
+    "message": "{value:.0f} misfires detected in the current window (limit {threshold:.0f}) — check ignition or fuel delivery."
+  },
+  {
+    "id": "air_fuel_ratio_anomaly",
+    "field": "air_fuel_ratio_proxy",
+    "operator": ">",
+    "threshold": 1.2,
+    "severity": "low",
+    "type": "combustion_anomaly",
+    "message": "Air-fuel ratio proxy at {value:.2f} deviates from the {threshold:.2f} stoichiometric target — check fuel trims."
+  }
+]

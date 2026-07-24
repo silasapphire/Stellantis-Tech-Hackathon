@@ -1,0 +1,74 @@
+[
+  {
+    "id": "battery_thermal_anomaly",
+    "fault_type": "battery_thermal_anomaly",
+    "title": "Battery pack cell temperature spread out of range",
+    "text": "A large cell temperature spread usually points to uneven cooling across the pack or a cell group with rising internal resistance. Recommended action: reduce load via throttle_load or eco_mode to cut heat generation, verify coolant flow to the affected pack zone, and if the spread does not settle after cooling, schedule a pack inspection - persistent spread accelerates SOH loss."
+  },
+  {
+    "id": "battery_degradation",
+    "fault_type": "battery_degradation",
+    "title": "Battery state of health below service threshold",
+    "text": "Low SOH reflects cumulative capacity fade from charge cycling and elevated operating temperature, not a transient fault - throttling will not restore it. Recommended action: schedule_service for a pack health inspection and consider reducing fast-charge frequency and average operating temperature to slow further degradation."
+  },
+  {
+    "id": "battery_low_charge",
+    "fault_type": "battery_low_charge",
+    "title": "State of charge critically low",
+    "text": "Low SOC risks an unplanned shutdown or reduced power availability. Recommended action: eco_mode to extend remaining range and route to charging at the earliest opportunity; this is an operational condition, not a hardware fault."
+  },
+  {
+    "id": "motor_thermal_anomaly",
+    "fault_type": "motor_thermal_anomaly",
+    "title": "Motor winding temperature exceeds safe limit",
+    "text": "Sustained high motor temperature risks winding insulation damage and accelerated bearing wear. Recommended action: throttle_load immediately to reduce torque demand and heat generation; if temperature does not fall within a few minutes, restart_subsystem to reset the drive electronics, and escalate to service if it recurs."
+  },
+  {
+    "id": "inverter_thermal_anomaly",
+    "fault_type": "inverter_thermal_anomaly",
+    "title": "Inverter temperature exceeds safe limit",
+    "text": "Elevated inverter temperature typically triggers power derating to protect the power electronics. Recommended action: eco_mode or throttle_load to reduce switching losses, verify inverter coolant loop flow, and restart_subsystem if the derating logic appears stuck."
+  },
+  {
+    "id": "thermal_management_anomaly",
+    "fault_type": "thermal_management_anomaly",
+    "title": "Coolant temperature above target (EV thermal loop)",
+    "text": "Coolant running hot suggests reduced pump duty cycle or a partially blocked radiator path. Recommended action: restart_subsystem to reset the thermal management controller and force a pump duty-cycle recalibration; schedule_service if elevated coolant temperature persists across resets."
+  },
+  {
+    "id": "charging_anomaly",
+    "fault_type": "charging_anomaly",
+    "title": "Charge rate exceeds expected ceiling",
+    "text": "An unexpectedly high negotiated charge rate can stress the pack and connector. Recommended action: verify charger handshake/negotiation; restart_subsystem on the onboard charger controller if the rate does not settle to the expected profile."
+  },
+  {
+    "id": "lubrication_anomaly",
+    "fault_type": "lubrication_anomaly",
+    "title": "Oil pressure low or oil temperature high",
+    "text": "Low oil pressure or overheated oil both accelerate bearing and cylinder wall wear if sustained. Recommended action: throttle_load to reduce engine load and heat generation immediately; this is a mechanical wear risk, so schedule_service for an oil system inspection is strongly recommended even if telemetry recovers."
+  },
+  {
+    "id": "cooling_anomaly",
+    "fault_type": "cooling_anomaly",
+    "title": "Engine coolant temperature exceeds safe limit",
+    "text": "Overheating coolant risks head gasket damage if sustained. Recommended action: throttle_load or eco_mode to reduce combustion heat immediately, and restart_subsystem to reset the cooling fan/thermostat controller; schedule_service if the temperature does not recover after a reset."
+  },
+  {
+    "id": "mechanical_wear_anomaly",
+    "fault_type": "mechanical_wear_anomaly",
+    "title": "Vibration index above baseline",
+    "text": "Elevated vibration is a proxy for mount, bearing, or balance wear rather than a condition that clears with a mode switch. Recommended action: throttle_load to reduce mechanical stress in the short term, but schedule_service for a mechanical inspection - vibration trending upward over time typically indicates a wear-out failure mode."
+  },
+  {
+    "id": "combustion_anomaly",
+    "fault_type": "combustion_anomaly",
+    "title": "Misfires or air-fuel ratio deviation detected",
+    "text": "Misfires or an off-target air-fuel ratio point to ignition or fuel-delivery issues. Recommended action: restart_subsystem to reset the engine control unit's fuel trims; if misfires continue, schedule_service for ignition/fuel system diagnostics rather than repeatedly resetting."
+  },
+  {
+    "id": "ml_detected_anomaly",
+    "fault_type": "ml_detected_anomaly",
+    "title": "Multivariate telemetry outlier (no single threshold breached)",
+    "text": "This reading was flagged as an outlier relative to the asset's own recent history even though no single fault-library threshold was crossed - often an early combination of small deviations across several signals. Recommended action: throttle_load as a conservative first step and monitor closely; schedule_service if the anomaly recurs across multiple readings."
+  }
+]

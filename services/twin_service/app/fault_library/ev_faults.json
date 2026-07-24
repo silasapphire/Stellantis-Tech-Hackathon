@@ -1,0 +1,65 @@
+[
+  {
+    "id": "battery_thermal_spread",
+    "field": "cell_temp_spread",
+    "operator": ">",
+    "threshold": 8.0,
+    "severity": "high",
+    "type": "battery_thermal_anomaly",
+    "message": "Cell temperature spread of {value:.1f}°C exceeds the {threshold:.1f}°C safe limit — indicates uneven pack cooling or a degrading cell group."
+  },
+  {
+    "id": "battery_low_soh",
+    "field": "soh",
+    "operator": "<",
+    "threshold": 80.0,
+    "severity": "medium",
+    "type": "battery_degradation",
+    "message": "State of health has dropped to {value:.1f}% (below {threshold:.0f}%) — pack capacity is meaningfully reduced from new."
+  },
+  {
+    "id": "battery_critical_soc",
+    "field": "soc",
+    "operator": "<",
+    "threshold": 10.0,
+    "severity": "medium",
+    "type": "battery_low_charge",
+    "message": "State of charge at {value:.1f}% is critically low — risk of unexpected shutdown."
+  },
+  {
+    "id": "motor_overtemp",
+    "field": "motor_temp",
+    "operator": ">",
+    "threshold": 120.0,
+    "severity": "high",
+    "type": "motor_thermal_anomaly",
+    "message": "Motor temperature at {value:.1f}°C exceeds the {threshold:.0f}°C safe limit — risk of winding insulation damage."
+  },
+  {
+    "id": "inverter_overtemp",
+    "field": "inverter_temp",
+    "operator": ">",
+    "threshold": 100.0,
+    "severity": "high",
+    "type": "inverter_thermal_anomaly",
+    "message": "Inverter temperature at {value:.1f}°C exceeds the {threshold:.0f}°C safe limit — power electronics derating likely."
+  },
+  {
+    "id": "coolant_overtemp",
+    "field": "coolant_temp",
+    "operator": ">",
+    "threshold": 95.0,
+    "severity": "medium",
+    "type": "thermal_management_anomaly",
+    "message": "Coolant temperature at {value:.1f}°C exceeds the {threshold:.0f}°C target — thermal management loop may be underperforming."
+  },
+  {
+    "id": "charge_rate_anomaly",
+    "field": "charge_rate",
+    "operator": ">",
+    "threshold": 150.0,
+    "severity": "low",
+    "type": "charging_anomaly",
+    "message": "Charge rate of {value:.1f} kW exceeds the {threshold:.0f} kW expected ceiling — check charger negotiation."
+  }
+]
