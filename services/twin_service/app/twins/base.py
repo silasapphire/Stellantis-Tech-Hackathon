@@ -10,6 +10,13 @@ from common.schemas import TelemetryReading
 _OPERATORS = {">": op.gt, "<": op.lt}
 
 
+def _threshold_confidence(value: float, threshold: float) -> float:
+    """0.6 right at the threshold, rising toward 0.99 the further past it the
+    value is - derived from the actual deviation, not a guess."""
+    deviation_ratio = abs(value - threshold) / max(abs(threshold), 1e-6)
+    return min(0.99, 0.6 + 0.4 * min(1.0, deviation_ratio))
+
+
 class DigitalTwin(ABC):
     """Common interface every vehicle-specific twin implements.
 
@@ -55,6 +62,7 @@ class DigitalTwin(ABC):
                         threshold=rule.threshold,
                         operator=rule.operator,
                         message=rule.message.format(value=value, threshold=rule.threshold),
+                        confidence=_threshold_confidence(value, rule.threshold),
                     )
                 )
         return findings

@@ -4,6 +4,7 @@ from typing import Awaitable, Callable
 
 from mcp import ClientSession
 
+from agents.graph.activity_log import make_activity_hook
 from agents.graph.groq_tool_loop import run_tool_loop
 from agents.graph.state import GraphState
 
@@ -21,12 +22,10 @@ SYSTEM_PROMPT = (
 
 def build_recommend_node(session: ClientSession) -> Callable[[GraphState], Awaitable[dict]]:
     async def recommend_node(state: GraphState) -> dict:
+        asset_id = state["asset_id"]
         issue = state.get("issue") or {}
         prediction = state.get("prediction") or {}
         calls: list[dict] = []
-
-        def record(name: str, args: dict) -> None:
-            calls.append({"node": "recommend", "tool": name, "args": args})
 
         user_prompt = (
             f"issue_id: {issue.get('id')}\n"
@@ -35,7 +34,13 @@ def build_recommend_node(session: ClientSession) -> Callable[[GraphState], Await
             f"predicted_risk: {prediction.get('risk_score')} "
             f"(horizon {prediction.get('predicted_failure_horizon_days')} days)\n"
         )
-        _, transcript = await run_tool_loop(session, SYSTEM_PROMPT, user_prompt, max_turns=4, on_tool_call=record)
+        _, transcript = await run_tool_loop(
+            session,
+            SYSTEM_PROMPT,
+            user_prompt,
+            max_turns=4,
+            on_tool_result=make_activity_hook(asset_id, "recommend", calls),
+        )
 
         update_result = next((t["result"] for t in transcript if t["tool"] == "diagnostics_update_issue"), {})
         recommendation = update_result.get("recommendation", "") if isinstance(update_result, dict) else ""

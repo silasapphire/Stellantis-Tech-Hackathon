@@ -22,8 +22,8 @@ from common.schemas import IssueState
 
 logger = logging.getLogger("scheduler")
 
-DIAGNOSTIC_SWEEP_SECONDS = int(os.environ.get("DIAGNOSTIC_SWEEP_SECONDS", "20"))
-RESOLUTION_SWEEP_SECONDS = int(os.environ.get("RESOLUTION_SWEEP_SECONDS", "15"))
+DIAGNOSTIC_SWEEP_SECONDS = int(os.environ.get("DIAGNOSTIC_SWEEP_SECONDS", "90"))
+RESOLUTION_SWEEP_SECONDS = int(os.environ.get("RESOLUTION_SWEEP_SECONDS", "20"))
 SUSTAINABILITY_SWEEP_SECONDS = int(os.environ.get("SUSTAINABILITY_SWEEP_SECONDS", "300"))
 
 

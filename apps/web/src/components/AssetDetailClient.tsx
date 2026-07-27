@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { useAsset } from "@/lib/hooks";
 import { AssetStatusBadge } from "./StatusBadge";
+import { LiveReadings } from "./LiveReadings";
 import { AssetTelemetryCharts } from "./AssetTelemetryCharts";
 import { IssueTimeline } from "./IssueTimeline";
+import { AgentActivityLog } from "./AgentActivityLog";
 import { ChatPanel } from "./ChatPanel";
 import { SustainabilityPanel } from "./SustainabilityPanel";
 import { NotificationsFeed } from "./NotificationsFeed";
@@ -13,7 +15,7 @@ export function AssetDetailClient({ assetId }: { assetId: string }) {
   const asset = useAsset(assetId);
 
   return (
-    <main className="mx-auto max-w-6xl px-6 py-10">
+    <main className="mx-auto max-w-4xl px-6 py-10">
       <Link href="/" className="text-sm" style={{ color: "var(--series-1)" }}>
         ← Fleet overview
       </Link>
@@ -30,34 +32,59 @@ export function AssetDetailClient({ assetId }: { assetId: string }) {
         {asset && <AssetStatusBadge status={asset.status} />}
       </header>
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
-        <section className="space-y-6">
-          {asset && <AssetTelemetryCharts assetId={assetId} vehicleType={asset.vehicle_type} />}
-
-          <div>
-            <h2 className="mb-3 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
-              Issue timeline
+      <div className="space-y-10">
+        {asset && (
+          <section className="space-y-4">
+            <h2 className="text-sm font-semibold uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
+              Live readings
             </h2>
-            <IssueTimeline assetId={assetId} />
-          </div>
+            <LiveReadings assetId={assetId} vehicleType={asset.vehicle_type} />
+          </section>
+        )}
 
-          <div>
-            <h2 className="mb-3 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
-              Sustainability
+        {asset && (
+          <section className="space-y-4">
+            <h2 className="text-sm font-semibold uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
+              Telemetry
             </h2>
-            <SustainabilityPanel assetId={assetId} />
-          </div>
+            <AssetTelemetryCharts assetId={assetId} vehicleType={asset.vehicle_type} />
+          </section>
+        )}
+
+        <section className="space-y-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
+            Issue timeline
+          </h2>
+          <IssueTimeline assetId={assetId} />
         </section>
 
-        <aside className="space-y-6">
+        <section className="space-y-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
+            Agent activity
+          </h2>
+          <AgentActivityLog assetId={assetId} />
+        </section>
+
+        <section className="space-y-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
+            Ask AI
+          </h2>
           <ChatPanel assetId={assetId} />
-          <div>
-            <h2 className="mb-3 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
-              Notifications
-            </h2>
-            <NotificationsFeed assetId={assetId} />
-          </div>
-        </aside>
+        </section>
+
+        <section className="space-y-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
+            Sustainability
+          </h2>
+          <SustainabilityPanel assetId={assetId} />
+        </section>
+
+        <section className="space-y-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
+            Notifications
+          </h2>
+          <NotificationsFeed assetId={assetId} />
+        </section>
       </div>
     </main>
   );

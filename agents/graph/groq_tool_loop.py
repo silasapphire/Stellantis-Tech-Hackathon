@@ -6,19 +6,23 @@ tool-call sequence.
 """
 from __future__ import annotations
 
+import asyncio
 import inspect
 import json
 import os
 from typing import Any, Awaitable, Callable
 
+import groq
 from groq import Groq
 from mcp import ClientSession
 
 from agents.graph.mcp_tools import call_mcp_tool, list_groq_tools
 
 GROQ_MODEL = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
+_COMPLETION_RETRIES = 3
 
 ToolCallHook = Callable[[str, dict[str, Any]], Awaitable[None] | None]
+ToolResultHook = Callable[[str, dict[str, Any], Any], Awaitable[None] | None]
 
 
 async def run_tool_loop(
@@ -27,6 +31,7 @@ async def run_tool_loop(
     user_prompt: str,
     max_turns: int = 6,
     on_tool_call: ToolCallHook | None = None,
+    on_tool_result: ToolResultHook | None = None,
     history: list[dict[str, str]] | None = None,
 ) -> tuple[str, list[dict]]:
     """Runs the loop to completion. Returns (final_text_answer, tool_call_transcript).
@@ -44,13 +49,7 @@ async def run_tool_loop(
     transcript: list[dict] = []
 
     for _ in range(max_turns):
-        response = client.chat.completions.create(
-            model=GROQ_MODEL,
-            messages=messages,
-            tools=tools,
-            tool_choice="auto",
-        )
-        message = response.choices[0].message
+        message = await _complete_with_retry(client, messages, tools)
         messages.append(message.model_dump(exclude_none=True))
 
         if not message.tool_calls:
@@ -67,6 +66,10 @@ async def run_tool_loop(
                 result = await call_mcp_tool(session, name, args)
             except Exception as exc:  # fed back to the model as a tool error, not fatal to the loop
                 result = {"error": str(exc)}
+            if on_tool_result:
+                maybe_awaitable = on_tool_result(name, args, result)
+                if inspect.isawaitable(maybe_awaitable):
+                    await maybe_awaitable
             transcript.append({"tool": name, "arguments": args, "result": result})
             messages.append(
                 {
@@ -80,3 +83,28 @@ async def run_tool_loop(
         "I wasn't able to finish reasoning about this within the allotted tool-call budget.",
         transcript,
     )
+
+
+async def _complete_with_retry(client: Groq, messages: list[dict], tools: list[dict]):
+    """Groq's Llama tool-calling occasionally emits a malformed function-call
+    token and 400s with `tool_use_failed` - transient, and a bare retry of the
+    same request normally succeeds. Also covers rate limits/5xx. Runs the
+    (blocking) SDK call off the event loop so it doesn't stall the scheduler
+    or concurrent chat connections sharing this process.
+    """
+    last_error: Exception | None = None
+    for attempt in range(_COMPLETION_RETRIES):
+        try:
+            response = await asyncio.to_thread(
+                client.chat.completions.create,
+                model=GROQ_MODEL,
+                messages=messages,
+                tools=tools,
+                tool_choice="auto",
+            )
+            return response.choices[0].message
+        except (groq.APIStatusError, groq.APIConnectionError) as exc:
+            last_error = exc
+            if attempt < _COMPLETION_RETRIES - 1:
+                await asyncio.sleep(0.5 * (attempt + 1))
+    raise last_error

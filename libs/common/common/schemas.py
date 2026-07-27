@@ -103,6 +103,7 @@ class Issue(BaseModel):
     type: str
     state: IssueState = IssueState.NEW
     severity: Severity
+    confidence: float = 1.0
     detected_at: datetime
     resolved_at: datetime | None = None
     explanation: str = ""

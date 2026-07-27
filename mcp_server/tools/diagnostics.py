@@ -102,6 +102,11 @@ def _ml_anomaly_findings(asset_id: str, twin_state: dict, existing_types: set[st
     if latest_prediction != -1 or "ml_detected_anomaly" in existing_types:
         return []
 
+    # decision_function: more negative = more anomalous. Map to a 0.5-0.97 confidence
+    # from the actual score, not a flat guess.
+    score = float(model.decision_function(matrix[:1])[0])
+    confidence = max(0.5, min(0.97, 0.5 - score))
+
     latest_metrics = twin_state.get("metrics", {})
     return [
         {
@@ -112,6 +117,7 @@ def _ml_anomaly_findings(asset_id: str, twin_state: dict, existing_types: set[st
             "value": 0.0,
             "threshold": 0.0,
             "operator": "isolation_forest",
+            "confidence": confidence,
             "message": (
                 "Multivariate outlier detection (IsolationForest over recent telemetry) flagged the "
                 f"current reading as anomalous relative to this asset's own recent history: {latest_metrics}."
@@ -120,19 +126,32 @@ def _ml_anomaly_findings(asset_id: str, twin_state: dict, existing_types: set[st
     ]
 
 
+_UNRESOLVED_STATES = [
+    IssueState.NEW.value,
+    IssueState.OPEN.value,
+    IssueState.MONITORING.value,
+    IssueState.ESCALATED.value,
+]
+
+
 def _upsert_issue(db, asset_id: str, finding: dict, now: datetime) -> dict:
     issues_ref = db.collection(COLLECTIONS.ISSUES)
     existing = list(
         issues_ref.where("asset_id", "==", asset_id)
         .where("type", "==", finding["type"])
-        .where("state", "in", [IssueState.NEW.value, IssueState.OPEN.value, IssueState.MONITORING.value])
+        .where("state", "in", _UNRESOLVED_STATES)
         .limit(1)
         .stream()
     )
 
+    confidence = finding.get("confidence", 1.0)
+
     if existing:
         doc = existing[0]
         data = doc.to_dict()
+        if data["state"] == IssueState.ESCALATED.value:
+            # already escalated for human review - don't touch it or create a duplicate
+            return {"id": doc.id, **data}
         if data["state"] == IssueState.MONITORING.value:
             # condition recurred mid-monitoring window - back to OPEN
             history_entry = {
@@ -141,9 +160,14 @@ def _upsert_issue(db, asset_id: str, finding: dict, now: datetime) -> dict:
                 "note": "Condition recurred during the recovery monitoring window.",
                 "agent": "diagnostics",
             }
-            doc.reference.update({"state": IssueState.OPEN.value, "history": data["history"] + [history_entry]})
+            doc.reference.update(
+                {"state": IssueState.OPEN.value, "history": data["history"] + [history_entry], "confidence": confidence}
+            )
             data["state"] = IssueState.OPEN.value
             data["history"].append(history_entry)
+        else:
+            doc.reference.update({"confidence": confidence})
+        data["confidence"] = confidence
         return {"id": doc.id, **data}
 
     issue_id = str(uuid.uuid4())
@@ -158,6 +182,7 @@ def _upsert_issue(db, asset_id: str, finding: dict, now: datetime) -> dict:
         "type": finding["type"],
         "state": IssueState.OPEN.value,
         "severity": finding["severity"],
+        "confidence": confidence,
         "detected_at": now,
         "resolved_at": None,
         "explanation": finding["message"],

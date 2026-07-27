@@ -4,6 +4,7 @@ from typing import Awaitable, Callable
 
 from mcp import ClientSession
 
+from agents.graph.activity_log import make_activity_hook
 from agents.graph.groq_tool_loop import run_tool_loop
 from agents.graph.state import GraphState
 
@@ -20,11 +21,12 @@ def build_predict_node(session: ClientSession) -> Callable[[GraphState], Awaitab
         asset_id = state["asset_id"]
         calls: list[dict] = []
 
-        def record(name: str, args: dict) -> None:
-            calls.append({"node": "predictive", "tool": name, "args": args})
-
         _, transcript = await run_tool_loop(
-            session, SYSTEM_PROMPT, f"asset_id: {asset_id}", max_turns=2, on_tool_call=record
+            session,
+            SYSTEM_PROMPT,
+            f"asset_id: {asset_id}",
+            max_turns=2,
+            on_tool_result=make_activity_hook(asset_id, "predictive", calls),
         )
         prediction = next((t["result"] for t in transcript if t["tool"] == "twin_predict_failure"), None)
 

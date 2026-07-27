@@ -50,6 +50,7 @@ export interface Issue {
   type: string;
   state: IssueState;
   severity: Severity;
+  confidence: number;
   detected_at: { seconds: number; nanoseconds: number };
   resolved_at: { seconds: number; nanoseconds: number } | null;
   explanation: string;
@@ -75,6 +76,18 @@ export interface ChatMessage {
   role: "user" | "assistant" | "tool";
   content: string;
   tool_calls: { tool: string; arguments: Record<string, unknown> }[] | null;
+  timestamp: { seconds: number; nanoseconds: number };
+}
+
+export type AgentName = "diagnostic" | "predictive" | "recommend" | "self_healing" | "sustainability" | "conversational";
+
+export interface AgentActivityEvent {
+  id: string;
+  asset_id: string;
+  agent: AgentName;
+  tool: string;
+  args: Record<string, unknown>;
+  summary: string;
   timestamp: { seconds: number; nanoseconds: number };
 }
 

@@ -26,6 +26,7 @@ class FaultFinding(BaseModel):
     threshold: float
     operator: str
     message: str
+    confidence: float = 1.0  # 0-1; how far past the threshold the value is, not a guess
 
 
 class TwinState(BaseModel):

@@ -1,13 +1,16 @@
 from __future__ import annotations
 
+import logging
 import uuid
 from datetime import datetime, timezone
 
+import groq
 from agents.graph.nodes.conversational import run_conversation_turn
 from common.firestore_client import COLLECTIONS, get_firestore_client
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 router = APIRouter()
+logger = logging.getLogger("chat")
 
 _HISTORY_TURNS = 10
 
@@ -24,15 +27,28 @@ async def chat_ws(websocket: WebSocket, asset_id: str) -> None:
             async def on_tool_call(name: str, args: dict) -> None:
                 await websocket.send_json({"type": "tool_call", "tool": name, "args": args})
 
-            history = _load_history(asset_id)
-            answer, transcript = await run_conversation_turn(
-                session, asset_id, user_message, history=history, on_tool_call=on_tool_call
-            )
+            try:
+                history = _load_history(asset_id)
+                answer, transcript = await run_conversation_turn(
+                    session, asset_id, user_message, history=history, on_tool_call=on_tool_call
+                )
+            except Exception as exc:
+                # A model/tool failure should never kill the connection - tell the user and
+                # keep the socket open so they can just try again.
+                logger.exception("chat turn failed for asset %s", asset_id)
+                await websocket.send_json({"type": "error", "content": _friendly_error_message(exc)})
+                continue
 
             _save_message(asset_id, "assistant", answer, tool_calls=transcript)
             await websocket.send_json({"type": "final", "content": answer})
     except WebSocketDisconnect:
         pass
+
+
+def _friendly_error_message(exc: Exception) -> str:
+    if isinstance(exc, groq.RateLimitError):
+        return "The assistant hit Groq's rate limit and can't respond right now - please try again in a few minutes."
+    return "Sorry, something went wrong answering that. Please try again."
 
 
 def _load_history(asset_id: str) -> list[dict[str, str]]:

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { collection, onSnapshot, orderBy, query, where, limit as fsLimit } from "firebase/firestore";
 import { db } from "./firebase";
-import type { Asset, Issue, Notification, SustainabilityPeriod, TelemetryReading } from "./types";
+import type { Asset, AgentActivityEvent, Issue, Notification, SustainabilityPeriod, TelemetryReading } from "./types";
 
 export function useAssets() {
   const [assets, setAssets] = useState<Asset[]>([]);
@@ -45,6 +45,21 @@ export function useTelemetryHistory(assetId: string, points = 60) {
   return readings;
 }
 
+export function useLatestReading(assetId: string) {
+  const [reading, setReading] = useState<TelemetryReading | null>(null);
+
+  useEffect(() => {
+    if (!assetId) return;
+    const q = query(collection(db, "telemetry", assetId, "readings"), orderBy("timestamp", "desc"), fsLimit(1));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      setReading(snapshot.empty ? null : (snapshot.docs[0].data() as TelemetryReading));
+    });
+    return unsubscribe;
+  }, [assetId]);
+
+  return reading;
+}
+
 export function useIssues(assetId?: string) {
   const [issues, setIssues] = useState<Issue[]>([]);
 
@@ -77,6 +92,23 @@ export function useNotifications(assetId?: string, take = 50) {
   }, [assetId, take]);
 
   return notifications;
+}
+
+export function useAgentActivity(assetId?: string, take = 40) {
+  const [events, setEvents] = useState<AgentActivityEvent[]>([]);
+
+  useEffect(() => {
+    const base = collection(db, "agent_activity");
+    const q = assetId
+      ? query(base, where("asset_id", "==", assetId), orderBy("timestamp", "desc"), fsLimit(take))
+      : query(base, orderBy("timestamp", "desc"), fsLimit(take));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      setEvents(snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as AgentActivityEvent));
+    });
+    return unsubscribe;
+  }, [assetId, take]);
+
+  return events;
 }
 
 export function useSustainability(assetId: string) {

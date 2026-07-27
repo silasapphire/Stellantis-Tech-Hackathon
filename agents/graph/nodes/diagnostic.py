@@ -4,6 +4,7 @@ from typing import Awaitable, Callable
 
 from mcp import ClientSession
 
+from agents.graph.activity_log import make_activity_hook
 from agents.graph.groq_tool_loop import run_tool_loop
 from agents.graph.state import GraphState
 
@@ -22,11 +23,12 @@ def build_diagnose_node(session: ClientSession) -> Callable[[GraphState], Awaita
         asset_id = state["asset_id"]
         calls: list[dict] = []
 
-        def record(name: str, args: dict) -> None:
-            calls.append({"node": "diagnostic", "tool": name, "args": args})
-
         answer, transcript = await run_tool_loop(
-            session, SYSTEM_PROMPT, f"asset_id: {asset_id}", max_turns=3, on_tool_call=record
+            session,
+            SYSTEM_PROMPT,
+            f"asset_id: {asset_id}",
+            max_turns=3,
+            on_tool_result=make_activity_hook(asset_id, "diagnostic", calls),
         )
 
         detect_result = next(

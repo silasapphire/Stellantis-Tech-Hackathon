@@ -46,3 +46,9 @@ export function SeverityBadge({ severity }: { severity: Severity }) {
   const cfg = SEVERITY_MAP[severity];
   return <Badge label={cfg.label} color={cfg.color} />;
 }
+
+export function ConfidenceBadge({ confidence }: { confidence: number }) {
+  const pct = Math.round(confidence * 100);
+  const color = confidence >= 0.85 ? "var(--status-good)" : confidence >= 0.65 ? "var(--status-warning)" : "var(--status-serious)";
+  return <Badge label={`${pct}% confidence`} color={color} />;
+}

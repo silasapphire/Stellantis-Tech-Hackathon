@@ -4,6 +4,7 @@ from typing import Awaitable, Callable
 
 from mcp import ClientSession
 
+from agents.graph.activity_log import make_activity_hook
 from agents.graph.groq_tool_loop import run_tool_loop
 from agents.graph.state import GraphState
 
@@ -25,15 +26,18 @@ def build_self_heal_node(session: ClientSession) -> Callable[[GraphState], Await
         issue = state.get("issue") or {}
         calls: list[dict] = []
 
-        def record(name: str, args: dict) -> None:
-            calls.append({"node": "self_healing", "tool": name, "args": args})
-
         user_prompt = (
             f"asset_id: {asset_id}\n"
             f"issue_type: {issue.get('type')}\n"
             f"explanation: {state.get('explanation', '')}"
         )
-        _, transcript = await run_tool_loop(session, SYSTEM_PROMPT, user_prompt, max_turns=3, on_tool_call=record)
+        _, transcript = await run_tool_loop(
+            session,
+            SYSTEM_PROMPT,
+            user_prompt,
+            max_turns=3,
+            on_tool_result=make_activity_hook(asset_id, "self_healing", calls),
+        )
 
         heal_result = next((t["result"] for t in transcript if t["tool"] == "actions_trigger_self_heal"), None)
         action = heal_result.get("action") if isinstance(heal_result, dict) else None

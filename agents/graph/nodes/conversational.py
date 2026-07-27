@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from mcp import ClientSession
 
+from agents.graph.activity_log import make_activity_hook
 from agents.graph.groq_tool_loop import ToolCallHook, run_tool_loop
 
 SYSTEM_PROMPT = (
@@ -31,5 +32,11 @@ async def run_conversation_turn(
 ) -> tuple[str, list[dict]]:
     system_prompt = SYSTEM_PROMPT.format(asset_id=asset_id)
     return await run_tool_loop(
-        session, system_prompt, user_message, max_turns=max_turns, on_tool_call=on_tool_call, history=history
+        session,
+        system_prompt,
+        user_message,
+        max_turns=max_turns,
+        on_tool_call=on_tool_call,
+        on_tool_result=make_activity_hook(asset_id, "conversational", []),
+        history=history,
     )

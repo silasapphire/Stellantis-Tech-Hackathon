@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 type ChatEntry =
-  | { kind: "user" | "assistant"; content: string }
+  | { kind: "user" | "assistant" | "error"; content: string }
   | { kind: "tool_call"; tool: string; args: Record<string, unknown> };
 
 const WS_BASE = process.env.NEXT_PUBLIC_API_WS_URL ?? "ws://localhost:8000";
@@ -29,6 +29,9 @@ export function ChatPanel({ assetId }: { assetId: string }) {
       } else if (data.type === "final") {
         setPending(false);
         setEntries((prev) => [...prev, { kind: "assistant", content: data.content }]);
+      } else if (data.type === "error") {
+        setPending(false);
+        setEntries((prev) => [...prev, { kind: "error", content: data.content }]);
       }
     };
 
@@ -80,6 +83,17 @@ export function ChatPanel({ assetId }: { assetId: string }) {
                   <span className="font-mono"> {JSON.stringify(entry.args)}</span>
                 )}
                 …
+              </div>
+            );
+          }
+          if (entry.kind === "error") {
+            return (
+              <div
+                key={i}
+                className="rounded-md px-3 py-2 text-center text-xs"
+                style={{ backgroundColor: "color-mix(in srgb, var(--status-critical) 12%, transparent)", color: "var(--status-critical)" }}
+              >
+                {entry.content}
               </div>
             );
           }

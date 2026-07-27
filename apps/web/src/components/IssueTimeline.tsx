@@ -1,7 +1,7 @@
 "use client";
 
 import { useIssues } from "@/lib/hooks";
-import { IssueStateBadge, SeverityBadge } from "./StatusBadge";
+import { ConfidenceBadge, IssueStateBadge, SeverityBadge } from "./StatusBadge";
 
 function formatTime(ts: { seconds: number } | string | undefined) {
   if (!ts) return "";
@@ -28,6 +28,7 @@ export function IssueTimeline({ assetId }: { assetId: string }) {
             <div className="flex items-center gap-2">
               <IssueStateBadge state={issue.state} />
               <SeverityBadge severity={issue.severity} />
+              <ConfidenceBadge confidence={issue.confidence ?? 1} />
               <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
                 {issue.type.replaceAll("_", " ")}
               </span>

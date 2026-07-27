@@ -17,15 +17,29 @@ from agents.graph.nodes.self_healing import build_self_heal_node
 from agents.graph.state import GraphState
 
 _HIGH_SEVERITY_AUTO_HEAL = {"high"}
+_SELF_HEAL_RETRY_BUDGET = 3  # keep in sync with diagnostics.SELF_HEAL_ATTEMPT_BUDGET
 
 
 def _route_after_diagnose(state: GraphState) -> str:
-    return "predict" if state.get("outcome") == "anomaly_found" else END
+    if state.get("outcome") != "anomaly_found":
+        return END
+
+    issue = state.get("issue") or {}
+    # Already fully diagnosed on a prior sweep (has a recommendation) and unchanged:
+    # skip the expensive predict+recommend re-run and go straight to a self-heal
+    # decision, so an unchanged open issue doesn't cost a full 3-call chain every tick.
+    if issue.get("recommendation"):
+        return _route_after_recommend(state)
+    return "predict"
 
 
 def _route_after_recommend(state: GraphState) -> str:
     issue = state.get("issue") or {}
-    return "self_heal" if issue.get("severity") in _HIGH_SEVERITY_AUTO_HEAL else END
+    if issue.get("severity") not in _HIGH_SEVERITY_AUTO_HEAL:
+        return END
+    if issue.get("self_heal_attempts", 0) >= _SELF_HEAL_RETRY_BUDGET:
+        return END  # budget exhausted; the resolution sweep will escalate it
+    return "self_heal"
 
 
 def build_diagnostic_graph(session: ClientSession):
@@ -37,7 +51,9 @@ def build_diagnostic_graph(session: ClientSession):
     graph.add_node("self_heal", build_self_heal_node(session))
 
     graph.add_edge(START, "diagnose")
-    graph.add_conditional_edges("diagnose", _route_after_diagnose, {"predict": "predict", END: END})
+    graph.add_conditional_edges(
+        "diagnose", _route_after_diagnose, {"predict": "predict", "self_heal": "self_heal", END: END}
+    )
     graph.add_edge("predict", "recommend")
     graph.add_conditional_edges("recommend", _route_after_recommend, {"self_heal": "self_heal", END: END})
     graph.add_edge("self_heal", END)
