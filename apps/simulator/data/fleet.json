@@ -1,0 +1,8 @@
+[
+  {"asset_id": "EV-B0005", "name": "EV-001 · NASA cell B0005", "vehicle_type": "EV", "source": "B0005", "start_fraction": 0.45},
+  {"asset_id": "EV-B0006", "name": "EV-002 · NASA cell B0006", "vehicle_type": "EV", "source": "B0006", "start_fraction": 0.25},
+  {"asset_id": "EV-B0007", "name": "EV-003 · NASA cell B0007", "vehicle_type": "EV", "source": "B0007", "start_fraction": 0.05},
+  {"asset_id": "ICE-HEALTHY", "name": "ICE-001 · Healthy diesel reference", "vehicle_type": "ICE", "source": "ICE-HEALTHY", "start_fraction": 0.0},
+  {"asset_id": "ICE-KIA-SPORTAGE", "name": "ICE-002 · Kia Sportage 2017", "vehicle_type": "ICE", "source": "ICE-KIA-SPORTAGE", "start_fraction": 0.0},
+  {"asset_id": "ICE-PEUGEOT-2008", "name": "ICE-003 · Peugeot 2008 2022", "vehicle_type": "ICE", "source": "ICE-PEUGEOT-2008", "start_fraction": 0.0}
+]

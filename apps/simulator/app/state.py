@@ -2,115 +2,67 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-import numpy as np
+from app.fault_injection import FAULT_PRESETS, ActiveFault
+from app.replay import DatasetReplayer
 
-from app.fault_injection import FAULT_PRESETS, ActiveFault, FaultPreset
-from app.profiles import (
-    EV_BASELINE,
-    EV_CHARGE_CYCLE_TICKS,
-    EV_CHARGE_DURATION_TICKS,
-    EV_SOC_DRIFT_PER_TICK,
-    ICE_BASELINE,
-)
-
-_INT_FIELDS = {"charge_cycles", "misfire_count"}
+_ROUND_FIELDS = {"soc", "soh", "capacity_ah", "cell_voltage", "current", "battery_temp", "coolant_temp",
+                 "control_module_voltage", "intake_air_temp"}
 
 
-class SimulatedAsset:
-    def __init__(self, asset_id: str, name: str, vehicle_type: str):
+class ReplayAsset:
+    """One fleet asset: a dataset replayer plus the optional demo fault overlay."""
+
+    def __init__(self, asset_id: str, name: str, vehicle_type: str, replayer: DatasetReplayer):
         self.asset_id = asset_id
         self.name = name
         self.vehicle_type = vehicle_type
-        self.baseline = dict(EV_BASELINE) if vehicle_type == "EV" else dict(ICE_BASELINE)
-        self.metrics: dict[str, float] = {field: base for field, (base, _) in self.baseline.items()}
-
-        if vehicle_type == "EV":
-            self.metrics["charge_cycles"] = 120.0
-            self._charging = False
-            self._ticks_to_next_charge = EV_CHARGE_CYCLE_TICKS
-            self._charge_ticks_remaining = 0
-        else:
-            self.metrics["misfire_count"] = 0.0
-
+        self.replayer = replayer
+        self.metrics: dict = {}
         self.active_fault: ActiveFault | None = None
-        self.rng = np.random.default_rng()
 
-    def inject_fault(self, fault_type: str) -> None:
+    def inject_fault(self, fault_type: str, target_value: float | None = None, ramp_ticks: int | None = None) -> None:
         preset = FAULT_PRESETS.get(fault_type)
         if preset is None:
             raise ValueError(f"unknown fault_type: {fault_type}")
-        self.active_fault = ActiveFault(fault_type=fault_type, preset=preset)
+        if preset.vehicle_type != self.vehicle_type:
+            raise ValueError(f"{fault_type} applies to {preset.vehicle_type} assets, not {self.vehicle_type}")
+        self.active_fault = ActiveFault(
+            fault_type=fault_type, preset=preset,
+            target_value=preset.target_value if target_value is None else target_value,
+            ramp_ticks=max(1, ramp_ticks if ramp_ticks is not None else preset.ramp_ticks),
+        )
 
-    def clear_fault(self) -> None:
+    def clear_fault(self) -> bool:
+        """Start ramping an injected fault away. Returns False when there was nothing injected."""
         if self.active_fault is None:
-            return
+            return False
         self.active_fault.clearing = True
         self.active_fault.clear_start_value = self.metrics.get(self.active_fault.preset.field, 0.0)
         self.active_fault.elapsed_ticks = 0
+        return True
 
     @property
     def fault_status(self) -> dict | None:
-        if self.active_fault is None:
+        f = self.active_fault
+        if f is None:
             return None
         return {
-            "fault_type": self.active_fault.fault_type,
-            "field": self.active_fault.preset.field,
-            "clearing": self.active_fault.clearing,
-            "elapsed_ticks": self.active_fault.elapsed_ticks,
+            "fault_type": f.fault_type, "field": f.preset.field, "target_value": f.target_value,
+            "clearing": f.clearing, "elapsed_ticks": f.elapsed_ticks, "ramp_ticks": f.ramp_ticks,
+            "progress": round(min(f.elapsed_ticks / max(f.ramp_ticks, 1), 1.0), 3),
         }
 
     def tick(self) -> dict:
-        self._random_walk()
-        if self.vehicle_type == "EV":
-            self._tick_ev_cycle()
-        self._apply_fault()
-        return self._reading_payload()
-
-    def _random_walk(self) -> None:
-        for field, (base, noise) in self.baseline.items():
-            if noise == 0:
-                continue
-            current = self.metrics.get(field, base)
-            reverted = current + (base - current) * 0.05  # gentle mean reversion
-            self.metrics[field] = reverted + self.rng.normal(0, noise)
-
-    def _tick_ev_cycle(self) -> None:
-        if self._charging:
-            self.metrics["charge_rate"] = 60.0 + self.rng.normal(0, 5)
-            self.metrics["soc"] = min(self.metrics["soc"] + 4.0, 100.0)
-            self._charge_ticks_remaining -= 1
-            if self._charge_ticks_remaining <= 0 or self.metrics["soc"] >= 100.0:
-                self._charging = False
-                self.metrics["charge_rate"] = 0.0
-                self.metrics["charge_cycles"] += 1
-                self.metrics["soh"] = max(self.metrics["soh"] - 0.03, 0.0)
-                self._ticks_to_next_charge = EV_CHARGE_CYCLE_TICKS
-        else:
-            self.metrics["soc"] = max(self.metrics["soc"] + EV_SOC_DRIFT_PER_TICK, 5.0)
-            self.metrics["charge_rate"] = 0.0
-            self._ticks_to_next_charge -= 1
-            if self._ticks_to_next_charge <= 0 or self.metrics["soc"] <= 15.0:
-                self._charging = True
-                self._charge_ticks_remaining = EV_CHARGE_DURATION_TICKS
-
-    def _apply_fault(self) -> None:
+        self.metrics = dict(self.replayer.next())
         fault = self.active_fault
-        if fault is None:
-            return
-
-        baseline_value = self.baseline.get(fault.preset.field, (0.0, 0.0))[0]
-        self.metrics[fault.preset.field] = fault.ramp_value(baseline_value)
-        fault.elapsed_ticks += 1
-
-        if fault.is_recovered():
-            self.metrics[fault.preset.field] = baseline_value
-            self.active_fault = None
-
-    def _reading_payload(self) -> dict:
-        payload = {
-            "asset_id": self.asset_id,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-        }
-        for field, value in self.metrics.items():
-            payload[field] = int(round(value)) if field in _INT_FIELDS else round(float(value), 2)
+        if fault is not None:
+            field = fault.preset.field
+            if field in self.metrics:
+                self.metrics[field] = fault.ramp_value(self.metrics[field])
+            fault.elapsed_ticks += 1
+            if fault.is_recovered():
+                self.active_fault = None
+        payload = {"asset_id": self.asset_id, "timestamp": datetime.now(timezone.utc).isoformat()}
+        for k, v in self.metrics.items():
+            payload[k] = round(v, 3) if k in _ROUND_FIELDS and isinstance(v, float) else v
         return payload
