@@ -1,65 +1,56 @@
 [
   {
-    "id": "battery_thermal_spread",
-    "field": "cell_temp_spread",
+    "id": "battery_temp_high",
+    "field": "battery_temp",
     "operator": ">",
-    "threshold": 8.0,
-    "severity": "high",
+    "threshold": 38.0,
+    "severity": "medium",
     "type": "battery_thermal_anomaly",
-    "message": "Cell temperature spread of {value:.1f}°C exceeds the {threshold:.1f}°C safe limit — indicates uneven pack cooling or a degrading cell group."
+    "message": "Battery temperature at {value:.1f}°C exceeds the {threshold:.0f}°C elevated-temperature limit — accelerated ageing and reduced capacity."
   },
   {
-    "id": "battery_low_soh",
+    "id": "battery_temp_critical",
+    "field": "battery_temp",
+    "operator": ">",
+    "threshold": 45.0,
+    "severity": "high",
+    "type": "battery_thermal_anomaly",
+    "message": "Battery temperature at {value:.1f}°C exceeds the {threshold:.0f}°C safe limit — thermal-runaway risk, stop charging/discharging."
+  },
+  {
+    "id": "battery_soh_low",
     "field": "soh",
     "operator": "<",
     "threshold": 80.0,
     "severity": "medium",
     "type": "battery_degradation",
-    "message": "State of health has dropped to {value:.1f}% (below {threshold:.0f}%) — pack capacity is meaningfully reduced from new."
+    "message": "State of health has dropped to {value:.1f}% (below {threshold:.0f}%) — usable capacity is meaningfully reduced from the 2.0 Ah rating."
   },
   {
-    "id": "battery_critical_soc",
-    "field": "soc",
+    "id": "battery_soh_eol",
+    "field": "soh",
     "operator": "<",
-    "threshold": 10.0,
-    "severity": "medium",
-    "type": "battery_low_charge",
-    "message": "State of charge at {value:.1f}% is critically low — risk of unexpected shutdown."
-  },
-  {
-    "id": "motor_overtemp",
-    "field": "motor_temp",
-    "operator": ">",
-    "threshold": 120.0,
+    "threshold": 72.0,
     "severity": "high",
-    "type": "motor_thermal_anomaly",
-    "message": "Motor temperature at {value:.1f}°C exceeds the {threshold:.0f}°C safe limit — risk of winding insulation damage."
+    "type": "battery_end_of_life",
+    "message": "State of health is {value:.1f}%, approaching the 70% end-of-life criterion (30% capacity fade) — plan pack replacement."
   },
   {
-    "id": "inverter_overtemp",
-    "field": "inverter_temp",
-    "operator": ">",
-    "threshold": 100.0,
+    "id": "cell_undervoltage",
+    "field": "cell_voltage",
+    "operator": "<",
+    "threshold": 2.0,
     "severity": "high",
-    "type": "inverter_thermal_anomaly",
-    "message": "Inverter temperature at {value:.1f}°C exceeds the {threshold:.0f}°C safe limit — power electronics derating likely."
+    "type": "battery_voltage_anomaly",
+    "message": "Cell voltage at {value:.2f} V is below the {threshold:.1f} V absolute minimum — deep-discharge damage risk."
   },
   {
-    "id": "coolant_overtemp",
-    "field": "coolant_temp",
+    "id": "cell_overvoltage",
+    "field": "cell_voltage",
     "operator": ">",
-    "threshold": 95.0,
-    "severity": "medium",
-    "type": "thermal_management_anomaly",
-    "message": "Coolant temperature at {value:.1f}°C exceeds the {threshold:.0f}°C target — thermal management loop may be underperforming."
-  },
-  {
-    "id": "charge_rate_anomaly",
-    "field": "charge_rate",
-    "operator": ">",
-    "threshold": 150.0,
-    "severity": "low",
-    "type": "charging_anomaly",
-    "message": "Charge rate of {value:.1f} kW exceeds the {threshold:.0f} kW expected ceiling — check charger negotiation."
+    "threshold": 4.25,
+    "severity": "high",
+    "type": "battery_voltage_anomaly",
+    "message": "Cell voltage at {value:.2f} V exceeds the {threshold:.2f} V charge limit — overcharge risk."
   }
 ]

@@ -36,6 +36,7 @@ class TwinState(BaseModel):
     metrics: dict[str, float | int | None] = Field(default_factory=dict)
     derived: dict[str, float] = Field(default_factory=dict)
     findings: list[FaultFinding] = Field(default_factory=list)
+    active_dtcs: list[str] = Field(default_factory=list)  # ICE only: OBD-II codes currently set
 
 
 class FailurePrediction(BaseModel):

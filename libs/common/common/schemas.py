@@ -1,4 +1,4 @@
-"""Shared pydantic schemas mirroring the Firestore data model.
+"""Shared pydantic schemas mirroring the document-store data model (see common.store).
 
 Every service (twin_service, api, mcp_server, agents) imports these instead of
 redefining the same document shapes, so a field added here is added everywhere.
@@ -41,32 +41,41 @@ class Asset(BaseModel):
 
 
 class TelemetryReading(BaseModel):
-    """Superset of EV + ICE fields; a given reading only fills in its vehicle type's fields."""
+    """Superset of EV + ICE fields; a given reading only fills in its vehicle type's fields.
+
+    EV fields come from the NASA Li-ion aging dataset (a single cell under test, so voltage is
+    per-cell). ICE fields are the OBD-II PIDs from the diesel OBD dataset, in SI units.
+    """
 
     asset_id: str
     timestamp: datetime
 
-    # EV fields
-    soc: float | None = None
-    soh: float | None = None
-    pack_voltage: float | None = None
-    cell_temp_spread: float | None = None
-    motor_temp: float | None = None
-    inverter_temp: float | None = None
-    charge_rate: float | None = None
-    charge_cycles: int | None = None
+    # EV (battery) fields
+    soc: float | None = None  # state of charge, % (coulomb counted)
+    soh: float | None = None  # state of health, % = measured capacity / 2.0 Ah rated
+    capacity_ah: float | None = None
+    cell_voltage: float | None = None  # V
+    current: float | None = None  # A (negative = discharging in the source data)
+    battery_temp: float | None = None  # degC
+    ambient_temp: float | None = None  # degC
+    charge_cycles: int | None = None  # completed discharge cycles
+    phase: str | None = None  # "charge" | "discharge"
 
-    # ICE fields
+    # ICE (OBD-II) fields
+    load_pct: float | None = None  # calculated engine load, %
+    coolant_temp: float | None = None  # ECT, degC
+    map_kpa: float | None = None  # intake manifold absolute pressure
     rpm: float | None = None
-    oil_pressure: float | None = None
-    oil_temp: float | None = None
-    vibration_index: float | None = None
-    fuel_rate: float | None = None
-    air_fuel_ratio_proxy: float | None = None
-    misfire_count: int | None = None
-
-    # shared
-    coolant_temp: float | None = None
+    speed_kph: float | None = None  # VSS
+    intake_air_temp: float | None = None  # IAT, degC
+    maf: float | None = None  # mass air flow, source units (undocumented in the dataset)
+    fuel_rail_pressure_mpa: float | None = None  # FRP
+    baro_kpa: float | None = None
+    control_module_voltage: float | None = None  # VPWR, V
+    ambient_air_temp: float | None = None  # AAT, degC
+    drive_mode: int | None = None  # dataset "Mode": 0 idle, 1 low speed, 2 high speed
+    dtc_codes: list[str] | None = None  # active Diagnostic Trouble Codes
+    dtc_count: int | None = None
 
 
 class TwinSnapshot(BaseModel):
@@ -136,12 +145,3 @@ class ChatMessage(BaseModel):
     content: str
     tool_calls: list[dict[str, Any]] | None = None
     timestamp: datetime
-
-
-class SustainabilityPeriod(BaseModel):
-    asset_id: str
-    period_start: datetime
-    period_end: datetime
-    energy_or_fuel_used: float
-    estimated_co2: float
-    baseline_co2: float

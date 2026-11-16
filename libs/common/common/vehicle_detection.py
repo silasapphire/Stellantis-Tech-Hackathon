@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from common.schemas import VehicleType
 
-_EV_SIGNAL_FIELDS = {"soc", "pack_voltage", "soh"}
-_ICE_SIGNAL_FIELDS = {"rpm", "oil_pressure"}
+_EV_SIGNAL_FIELDS = {"soc", "soh", "cell_voltage", "battery_temp"}
+_ICE_SIGNAL_FIELDS = {"rpm", "load_pct", "dtc_count"}
 
 
 def detect_vehicle_type(sample_reading: dict) -> VehicleType | None:
