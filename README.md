@@ -18,6 +18,7 @@ pip install -r requirements.txt
 copy .env.example .env          # then set COHERE_API_KEY
 cd apps/web ; npm install ; cd ../..
 
+# Only if you have the raw data and want to regenerate data/processed (already committed):
 python data_prep/prepare_ice.py  # -> data/processed/ice_obd_clean.csv (+ report json)
 python data_prep/prepare_ev.py   # -> data/processed/ev_*.csv / ev_degradation.json
 ```
@@ -38,7 +39,8 @@ Without `COHERE_API_KEY` the platform still replays data, detects issues, scores
 
 ## Notes
 - Data lives in `data/diagnostics.db` (SQLite). Delete it to reset the demo.
-- `data/processed/` is generated; it is not meant to be committed.
+- `data/processed/` (22 MB) is committed, so after a `git pull` you can run without the raw files. The raw
+  datasets (`data/MASTER_*.xlsx`, `data/1.…6. BatteryAgingARC*/`) are only needed to re-run the `data_prep` scripts.
 - **Demo controls:** *Self-Healing* view → pick a fault type, severity and ramp speed, then **Inject fault** /
   **Clear now**; or switch **Autopilot** on to inject and clear random faults on a timer.
 - The simulator replays recorded rows; the only synthetic element is the optional *demo fault injection*

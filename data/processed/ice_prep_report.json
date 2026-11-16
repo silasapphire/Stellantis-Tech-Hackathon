@@ -1,0 +1,188 @@
+{
+  "raw_rows_train": 118477,
+  "raw_rows_test": 33838,
+  "raw_rows_total": 152315,
+  "missing_values": 0,
+  "consecutive_duplicates_dropped": 116429,
+  "out_of_range_dropped": 0,
+  "clean_rows": 35886,
+  "rows_per_vehicle": {
+    "ICE-HEALTHY": 8904,
+    "ICE-KIA-SPORTAGE": 7107,
+    "ICE-BERLINGO": 6414,
+    "ICE-CAPTIVA": 6123,
+    "ICE-PEUGEOT-2008": 4473,
+    "ICE-UNLABELED": 1675,
+    "ICE-EXPERT": 1190
+  },
+  "vehicle_names": {
+    "ICE-HEALTHY": "Healthy diesel reference (Rodius / 308 / Fiesta)",
+    "ICE-PEUGEOT-2008": "Peugeot 2008 (2022) 1.5L",
+    "ICE-BERLINGO": "Citro\u00ebn Berlingo (2014) 1.6L",
+    "ICE-EXPERT": "Peugeot Expert (2014) 2.0L",
+    "ICE-KIA-SPORTAGE": "Kia Sportage (2017) 2.0L",
+    "ICE-CAPTIVA": "Chevrolet Captiva (2011) 2.0L",
+    "ICE-UNLABELED": "Rows with no DTC flag set at all (no P0000 marker) - excluded from the fleet"
+  },
+  "dtc_per_vehicle": {
+    "ICE-BERLINGO": [
+      "P0102",
+      "P0113",
+      "P2562"
+    ],
+    "ICE-CAPTIVA": [
+      "P0069",
+      "P0089",
+      "P0107"
+    ],
+    "ICE-EXPERT": [
+      "P0102",
+      "P0113",
+      "P0234",
+      "P0406"
+    ],
+    "ICE-HEALTHY": [],
+    "ICE-KIA-SPORTAGE": [
+      "P0403",
+      "P0404",
+      "P2009",
+      "P2015"
+    ],
+    "ICE-PEUGEOT-2008": [
+      "P0562"
+    ],
+    "ICE-UNLABELED": []
+  },
+  "feature_summary": {
+    "load_pct": {
+      "count": 35886.0,
+      "mean": 31.87,
+      "std": 27.18,
+      "min": 0.0,
+      "25%": 12.9,
+      "50%": 25.5,
+      "75%": 45.1,
+      "max": 100.0
+    },
+    "coolant_temp": {
+      "count": 35886.0,
+      "mean": 78.08,
+      "std": 15.05,
+      "min": 22.2,
+      "25%": 67.2,
+      "50%": 82.8,
+      "75%": 91.1,
+      "max": 116.1
+    },
+    "map_kpa": {
+      "count": 35886.0,
+      "mean": 104.54,
+      "std": 42.0,
+      "min": 19.3,
+      "25%": 100.7,
+      "50%": 106.2,
+      "75%": 122.7,
+      "max": 255.1
+    },
+    "rpm": {
+      "count": 35886.0,
+      "mean": 1514.5,
+      "std": 570.88,
+      "min": 0.0,
+      "25%": 909.0,
+      "50%": 1535.0,
+      "75%": 1902.0,
+      "max": 3174.0
+    },
+    "speed_kph": {
+      "count": 35886.0,
+      "mean": 43.56,
+      "std": 36.22,
+      "min": 0.0,
+      "25%": 11.3,
+      "50%": 35.4,
+      "75%": 76.0,
+      "max": 133.5
+    },
+    "intake_air_temp": {
+      "count": 35886.0,
+      "mean": 31.2,
+      "std": 11.56,
+      "min": 7.8,
+      "25%": 22.2,
+      "50%": 27.8,
+      "75%": 38.9,
+      "max": 62.2
+    },
+    "maf": {
+      "count": 35886.0,
+      "mean": 0.05,
+      "std": 0.03,
+      "min": 0.0,
+      "25%": 0.03,
+      "50%": 0.05,
+      "75%": 0.07,
+      "max": 0.26
+    },
+    "fuel_rail_pressure_mpa": {
+      "count": 35886.0,
+      "mean": 57.08,
+      "std": 32.09,
+      "min": 2.33,
+      "25%": 28.1,
+      "50%": 47.22,
+      "75%": 81.96,
+      "max": 161.28
+    },
+    "baro_kpa": {
+      "count": 35886.0,
+      "mean": 99.43,
+      "std": 0.94,
+      "min": 97.2,
+      "25%": 99.3,
+      "50%": 99.3,
+      "75%": 100.0,
+      "max": 100.7
+    },
+    "control_module_voltage": {
+      "count": 35886.0,
+      "mean": 14.09,
+      "std": 0.55,
+      "min": 12.22,
+      "25%": 14.06,
+      "50%": 14.2,
+      "75%": 14.44,
+      "max": 14.76
+    },
+    "ambient_air_temp": {
+      "count": 35886.0,
+      "mean": 22.97,
+      "std": 15.63,
+      "min": 0.0,
+      "25%": 15.0,
+      "50%": 17.2,
+      "75%": 25.6,
+      "max": 52.8
+    },
+    "mode": {
+      "count": 35886.0,
+      "mean": 1.16,
+      "std": 0.71,
+      "min": 0.0,
+      "25%": 1.0,
+      "50%": 1.0,
+      "75%": 2.0,
+      "max": 2.0
+    },
+    "dtc_count": {
+      "count": 35886.0,
+      "mean": 2.1,
+      "std": 1.6,
+      "min": 0.0,
+      "25%": 0.0,
+      "50%": 3.0,
+      "75%": 3.0,
+      "max": 4.0
+    }
+  }
+}

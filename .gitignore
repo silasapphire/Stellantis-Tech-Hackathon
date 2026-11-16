@@ -35,5 +35,6 @@ faiss_index/
 
 # Local runtime data
 data/diagnostics.db*
-data/processed/
+# generated at runtime (needs your Cohere key); everything else in data/processed is committed
+data/processed/kb_embeddings_*.npy
 .run/

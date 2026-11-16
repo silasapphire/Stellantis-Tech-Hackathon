@@ -1,0 +1,49 @@
+{
+  "dropped": {
+    "bad_capacity": 218,
+    "capacity_spike": 25,
+    "too_few_samples": 17
+  },
+  "batteries": 34,
+  "cycles_total": 7305,
+  "cycles_by_type": {
+    "charge": 2812,
+    "discharge": 2537,
+    "impedance": 1956
+  },
+  "invalid_samples_dropped": 9,
+  "sample_rows": 209493,
+  "sample_batteries": [
+    "B0005",
+    "B0006",
+    "B0007",
+    "B0018"
+  ],
+  "degradation_model": {
+    "rated_ah": 2.0,
+    "eol_soh_pct": 70.0,
+    "per_ambient_temp": {
+      "4": {
+        "fade_pct_per_cycle": 0.27316222141030333,
+        "n_batteries": 14
+      },
+      "22": {
+        "fade_pct_per_cycle": 0.27771482176360224,
+        "n_batteries": 3
+      },
+      "24": {
+        "fade_pct_per_cycle": 0.12713738368910776,
+        "n_batteries": 11
+      },
+      "43": {
+        "fade_pct_per_cycle": 0.2495745778611632,
+        "n_batteries": 4
+      },
+      "44": {
+        "fade_pct_per_cycle": 0.3606246498599441,
+        "n_batteries": 3
+      }
+    },
+    "default_fade_pct_per_cycle": 0.27316222141030333
+  }
+}

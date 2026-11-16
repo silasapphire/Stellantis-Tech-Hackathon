@@ -1,0 +1,27 @@
+{
+  "rated_ah": 2.0,
+  "eol_soh_pct": 70.0,
+  "per_ambient_temp": {
+    "4": {
+      "fade_pct_per_cycle": 0.27316222141030333,
+      "n_batteries": 14
+    },
+    "22": {
+      "fade_pct_per_cycle": 0.27771482176360224,
+      "n_batteries": 3
+    },
+    "24": {
+      "fade_pct_per_cycle": 0.12713738368910776,
+      "n_batteries": 11
+    },
+    "43": {
+      "fade_pct_per_cycle": 0.2495745778611632,
+      "n_batteries": 4
+    },
+    "44": {
+      "fade_pct_per_cycle": 0.3606246498599441,
+      "n_batteries": 3
+    }
+  },
+  "default_fade_pct_per_cycle": 0.27316222141030333
+}
