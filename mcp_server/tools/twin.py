@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 
 from mcp.server.fastmcp import FastMCP
 
-from common.firestore_client import COLLECTIONS, get_firestore_client
+from common.store import COLLECTIONS, get_store
 from mcp_server.tools._twin_client import call_twin_service
 
 
@@ -31,7 +31,7 @@ def register(mcp: FastMCP) -> None:
 
 
 def _persist_prediction(asset_id: str, prediction: dict) -> None:
-    db = get_firestore_client()
+    db = get_store()
     now = datetime.now(timezone.utc)
 
     db.collection(COLLECTIONS.ASSETS).document(asset_id).update(

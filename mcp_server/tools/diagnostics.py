@@ -11,18 +11,20 @@ import numpy as np
 from mcp.server.fastmcp import FastMCP
 from sklearn.ensemble import IsolationForest
 
-from common.firestore_client import COLLECTIONS, get_firestore_client
+from common.store import COLLECTIONS, get_store
 from common.schemas import AssetStatus, IssueState, NotificationType, RiskLevel, Severity
-from mcp_server.tools._firestore_helpers import get_recent_readings
+from mcp_server.tools._store_helpers import get_recent_readings
 from mcp_server.tools._twin_client import get_twin_state
 
 MONITORING_WINDOW_SECONDS = int(os.environ.get("MONITORING_WINDOW_SECONDS", "45"))
 SELF_HEAL_ATTEMPT_BUDGET = int(os.environ.get("SELF_HEAL_ATTEMPT_BUDGET", "3"))
 ML_ANOMALY_MIN_SAMPLES = 20
 ML_NUMERIC_FIELDS = (
-    "soc", "soh", "pack_voltage", "cell_temp_spread", "motor_temp", "inverter_temp",
-    "rpm", "oil_pressure", "oil_temp", "vibration_index", "fuel_rate",
-    "air_fuel_ratio_proxy", "misfire_count", "coolant_temp",
+    # EV (battery)
+    "soc", "soh", "cell_voltage", "current", "battery_temp",
+    # ICE (OBD-II)
+    "load_pct", "coolant_temp", "map_kpa", "rpm", "speed_kph", "intake_air_temp", "maf",
+    "fuel_rail_pressure_mpa", "control_module_voltage",
 )
 
 _SEVERITY_TO_STATUS = {
@@ -42,7 +44,7 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     def diagnostics_get_issue_history(asset_id: str) -> list[dict]:
         """Get all issues (any state) recorded for an asset, most recently detected first."""
-        db = get_firestore_client()
+        db = get_store()
         query = (
             db.collection(COLLECTIONS.ISSUES)
             .where("asset_id", "==", asset_id)
@@ -62,7 +64,7 @@ def register(mcp: FastMCP) -> None:
 
 
 def _detect_anomaly(asset_id: str) -> dict:
-    db = get_firestore_client()
+    db = get_store()
     twin_state = get_twin_state(asset_id)
     findings = list(twin_state.get("findings", []))
     findings.extend(_ml_anomaly_findings(asset_id, twin_state, existing_types={f["type"] for f in findings}))
@@ -99,12 +101,13 @@ def _ml_anomaly_findings(asset_id: str, twin_state: dict, existing_types: set[st
     model.fit(matrix)
     latest_prediction = model.predict(matrix[:1])[0]  # readings are newest-first
 
-    if latest_prediction != -1 or "ml_detected_anomaly" in existing_types:
+    # decision_function: more negative = more anomalous. `contamination` alone flags ~8% of
+    # any window, so also require a clearly negative score to avoid constant false positives.
+    score = float(model.decision_function(matrix[:1])[0])
+    if latest_prediction != -1 or score > -0.05 or "ml_detected_anomaly" in existing_types:
         return []
 
-    # decision_function: more negative = more anomalous. Map to a 0.5-0.97 confidence
-    # from the actual score, not a flat guess.
-    score = float(model.decision_function(matrix[:1])[0])
+    # Map the score to a 0.5-0.97 confidence, not a flat guess.
     confidence = max(0.5, min(0.97, 0.5 - score))
 
     latest_metrics = twin_state.get("metrics", {})
@@ -197,7 +200,7 @@ def _upsert_issue(db, asset_id: str, finding: dict, now: datetime) -> dict:
 
 
 def _resolve_if_recovered(issue_id: str) -> dict:
-    db = get_firestore_client()
+    db = get_store()
     doc = db.collection(COLLECTIONS.ISSUES).document(issue_id).get()
     if not doc.exists:
         raise ValueError(f"unknown issue_id: {issue_id}")
@@ -279,7 +282,7 @@ def _resolve_if_recovered(issue_id: str) -> dict:
 
 
 def _update_issue(issue_id: str, explanation: str, recommendation: str) -> dict:
-    db = get_firestore_client()
+    db = get_store()
     doc_ref = db.collection(COLLECTIONS.ISSUES).document(issue_id)
     if not doc_ref.get().exists:
         raise ValueError(f"unknown issue_id: {issue_id}")

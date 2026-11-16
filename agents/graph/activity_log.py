@@ -1,5 +1,5 @@
 """Real-time agent activity log: every MCP tool call any node makes, and its
-actual result, is written to Firestore the moment it completes - so the
+actual result, is written to the document store the moment it completes - so the
 dashboard shows what each agent genuinely did (not a simulated log).
 """
 from __future__ import annotations
@@ -8,12 +8,12 @@ import asyncio
 from datetime import datetime, timezone
 from typing import Any
 
-from common.firestore_client import COLLECTIONS, get_firestore_client
+from common.store import COLLECTIONS, get_store
 
 
 def make_activity_hook(asset_id: str, agent: str, calls: list[dict]):
     """Returns an on_tool_result-compatible hook (tool, args, result) that
-    records locally (for the graph state transcript) and persists to Firestore."""
+    records locally (for the graph state transcript) and persists to the document store."""
 
     async def hook(tool: str, args: dict[str, Any], result: Any) -> None:
         calls.append({"node": agent, "tool": tool, "args": args, "result": result})
@@ -26,7 +26,7 @@ async def _record(asset_id: str, agent: str, tool: str, args: dict[str, Any], re
     summary = _summarize_result(tool, result)
 
     def _write() -> None:
-        db = get_firestore_client()
+        db = get_store()
         db.collection(COLLECTIONS.AGENT_ACTIVITY).add(
             {
                 "asset_id": asset_id,
@@ -65,6 +65,4 @@ def _summarize_result(tool: str, result: Any) -> str:
         return f"action={result.get('action')}, effective={result.get('effective')}, attempt #{result.get('attempt')}"
     if tool == "diagnostics_resolve_if_recovered" and isinstance(result, dict):
         return f"resolved={result.get('resolved')}, state={result.get('state')}"
-    if tool == "telemetry_record_sustainability_period" and isinstance(result, dict):
-        return "sustainability period recorded"
     return "ok"

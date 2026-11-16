@@ -6,9 +6,10 @@ import os
 
 import httpx
 
-from mcp_server.tools._firestore_helpers import get_asset, get_recent_readings
+from mcp_server.tools._store_helpers import get_asset, get_recent_readings
 
-TWIN_SERVICE_URL = os.environ.get("TWIN_SERVICE_URL", "http://localhost:8100")
+_http = httpx.Client(timeout=10.0, trust_env=False)  # shared: per-call clients are slow on Windows
+TWIN_SERVICE_URL = os.environ.get("TWIN_SERVICE_URL", "http://127.0.0.1:8100")
 
 
 def call_twin_service(asset_id: str, action: str, extra_body: dict | None = None) -> dict:
@@ -18,7 +19,7 @@ def call_twin_service(asset_id: str, action: str, extra_body: dict | None = None
         raise ValueError(f"no telemetry for asset_id: {asset_id}; cannot compute twin state")
 
     body = {"readings": readings, **(extra_body or {})}
-    response = httpx.post(
+    response = _http.post(
         f"{TWIN_SERVICE_URL}/twin/{asset_id}/{action}",
         params={"vehicle_type": asset["vehicle_type"]},
         json=body,

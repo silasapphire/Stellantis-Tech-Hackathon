@@ -1,11 +1,10 @@
 [project]
 name = "sc-diagnostics-common"
 version = "0.1.0"
-description = "Shared pydantic schemas and Firestore client for the Smart Connected Diagnostics Platform"
+description = "Shared pydantic schemas and document store for the Smart Connected Diagnostics Platform"
 requires-python = ">=3.11"
 dependencies = [
     "pydantic>=2.6",
-    "google-cloud-firestore>=2.16",
 ]
 
 [build-system]

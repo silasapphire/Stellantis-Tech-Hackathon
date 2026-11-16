@@ -1,9 +1,13 @@
 """Self-heal actions are scoped to what's plausible for a connected vehicle asset:
 throttling, mode switches, subsystem resets, and service scheduling - never literal
-physical repair. `throttle_load`/`eco_mode`/`restart_subsystem` are treated as
-effective (they clear the live fault); `schedule_service` books a service visit but
-does not touch live telemetry, so degradation-type issues correctly keep escalating
-if that's the only action tried.
+physical repair.
+
+`throttle_load`/`eco_mode`/`restart_subsystem` can only clear a *demo-injected* fault
+(the simulator's optional fault overlay). The platform replays real recorded data, so
+against a genuine fault in that data (an active DTC, a degraded battery) they change
+nothing and the result honestly reports effective=False; the issue then keeps escalating
+until a human services the vehicle. `schedule_service` books a service visit and never
+touches live telemetry.
 """
 from __future__ import annotations
 
@@ -14,10 +18,11 @@ from datetime import datetime, timezone
 import httpx
 from mcp.server.fastmcp import FastMCP
 
-from common.firestore_client import COLLECTIONS, get_firestore_client
+from common.store import COLLECTIONS, get_store
 from common.schemas import IssueState, NotificationType
 
-SIMULATOR_URL = os.environ.get("SIMULATOR_URL", "http://localhost:8200")
+_http = httpx.Client(timeout=5.0, trust_env=False)
+SIMULATOR_URL = os.environ.get("SIMULATOR_URL", "http://127.0.0.1:8200")
 
 ACTION_CLEARS_LIVE_FAULT = {
     "throttle_load": True,
@@ -43,7 +48,7 @@ def _trigger_self_heal(asset_id: str, action: str) -> dict:
     if action not in ACTION_CLEARS_LIVE_FAULT:
         raise ValueError(f"unknown self-heal action: {action}. Expected one of {list(ACTION_CLEARS_LIVE_FAULT)}")
 
-    db = get_firestore_client()
+    db = get_store()
     query = (
         db.collection(COLLECTIONS.ISSUES)
         .where("asset_id", "==", asset_id)
@@ -60,9 +65,15 @@ def _trigger_self_heal(asset_id: str, action: str) -> dict:
     now = datetime.now(timezone.utc)
     attempts = issue.get("self_heal_attempts", 0) + 1
     effective = ACTION_CLEARS_LIVE_FAULT[action]
+    if effective:
+        try:
+            response = _http.delete(f"{SIMULATOR_URL}/simulator/fault/{asset_id}", timeout=5.0)
+            effective = bool(response.json().get("cleared")) if response.status_code == 200 else False
+        except (httpx.HTTPError, ValueError):
+            effective = False  # could not reach the subsystem - do not claim success
 
     note = f"Self-heal action '{action}' triggered (attempt {attempts})."
-    note += " Expected to restore normal metrics; monitoring for recovery." if effective else " Does not directly clear live telemetry; condition persists until serviced."
+    note += " Fault overlay cleared; monitoring for recovery." if effective else " No clearable fault - the underlying condition persists until the vehicle is serviced."
 
     history_entry = {"state": issue["state"], "timestamp": now, "note": note, "agent": "self_healing"}
     doc.reference.update(
@@ -72,12 +83,6 @@ def _trigger_self_heal(asset_id: str, action: str) -> dict:
             "history": issue["history"] + [history_entry],
         }
     )
-
-    if effective:
-        try:
-            httpx.delete(f"{SIMULATOR_URL}/simulator/fault/{asset_id}", timeout=5.0)
-        except httpx.HTTPError:
-            pass  # best-effort in demo/sim environments; real deployments would call the actual subsystem here
 
     _send_notification(
         "dashboard",
@@ -93,7 +98,7 @@ def _trigger_self_heal(asset_id: str, action: str) -> dict:
 def _send_notification(
     channel: str, message: str, asset_id: str = "", issue_id: str = "", notif_type: NotificationType = NotificationType.ALERT
 ) -> dict:
-    db = get_firestore_client()
+    db = get_store()
     notif_id = str(uuid.uuid4())
     db.collection(COLLECTIONS.NOTIFICATIONS).document(notif_id).set(
         {
