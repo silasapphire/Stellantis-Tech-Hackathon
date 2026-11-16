@@ -32,3 +32,8 @@ faiss_index/
 
 # Claude Code local runtime state
 .claude/
+
+# Local runtime data
+data/diagnostics.db*
+data/processed/
+.run/
