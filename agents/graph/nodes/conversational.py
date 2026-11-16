@@ -1,4 +1,4 @@
-"""The conversational orchestrator: user-facing chat, backed by the same Groq
+"""The conversational orchestrator: user-facing chat, backed by the same Cohere
 tool loop as every other agent, but with access to every tool on the MCP
 server (not a restricted subset) and a longer tool-call budget so it can chain
 multiple lookups per turn.
@@ -8,11 +8,12 @@ from __future__ import annotations
 from mcp import ClientSession
 
 from agents.graph.activity_log import make_activity_hook
-from agents.graph.groq_tool_loop import ToolCallHook, run_tool_loop
+from agents.graph.tool_loop import ToolCallHook, run_tool_loop
 
 SYSTEM_PROMPT = (
     "You are the conversational assistant for a Smart Connected Diagnostics Platform. You have "
-    "tools to inspect telemetry, digital twin state, issue history, and repair guidance, and to "
+    "tools to inspect telemetry (EV: NASA Li-ion battery data; ICE: diesel OBD-II PIDs and DTCs), "
+    "digital twin state, issue history, and repair guidance (RAG), and to "
     "trigger self-heal actions or notifications. The user is currently looking at asset_id: "
     "{asset_id}. Use tools to ground every factual claim - cite concrete numbers from tool "
     "results rather than guessing. If asked to fix, resolve, or heal something, call "

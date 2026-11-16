@@ -4,9 +4,9 @@ import logging
 import uuid
 from datetime import datetime, timezone
 
-import groq
+from cohere.core.api_error import ApiError
 from agents.graph.nodes.conversational import run_conversation_turn
-from common.firestore_client import COLLECTIONS, get_firestore_client
+from common.store import COLLECTIONS, get_store
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 router = APIRouter()
@@ -46,13 +46,17 @@ async def chat_ws(websocket: WebSocket, asset_id: str) -> None:
 
 
 def _friendly_error_message(exc: Exception) -> str:
-    if isinstance(exc, groq.RateLimitError):
-        return "The assistant hit Groq's rate limit and can't respond right now - please try again in a few minutes."
+    if isinstance(exc, RuntimeError) and "COHERE_API_KEY" in str(exc):
+        return "The assistant isn't configured: set COHERE_API_KEY in .env and restart the API."
+    if isinstance(exc, ApiError) and exc.status_code == 429:
+        return "The assistant hit Cohere's rate limit and can't respond right now - please try again in a minute."
+    if isinstance(exc, ApiError) and exc.status_code in (401, 403):
+        return "Cohere rejected the API key - check COHERE_API_KEY in .env."
     return "Sorry, something went wrong answering that. Please try again."
 
 
 def _load_history(asset_id: str) -> list[dict[str, str]]:
-    db = get_firestore_client()
+    db = get_store()
     query = (
         db.collection(COLLECTIONS.CHAT_SESSIONS)
         .document(asset_id)
@@ -65,7 +69,7 @@ def _load_history(asset_id: str) -> list[dict[str, str]]:
 
 
 def _save_message(asset_id: str, role: str, content: str, tool_calls: list[dict] | None = None) -> None:
-    db = get_firestore_client()
+    db = get_store()
     message_id = str(uuid.uuid4())
     db.collection(COLLECTIONS.CHAT_SESSIONS).document(asset_id).collection("messages").document(message_id).set(
         {

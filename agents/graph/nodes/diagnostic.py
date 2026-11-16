@@ -5,7 +5,7 @@ from typing import Awaitable, Callable
 from mcp import ClientSession
 
 from agents.graph.activity_log import make_activity_hook
-from agents.graph.groq_tool_loop import run_tool_loop
+from agents.graph.tool_loop import run_tool_loop
 from agents.graph.state import GraphState
 
 SYSTEM_PROMPT = (
@@ -13,7 +13,7 @@ SYSTEM_PROMPT = (
     "Call diagnostics_detect_anomaly with the given asset_id to check for anomalies against "
     "both the fault-library thresholds and ML outlier detection. If it reports any findings, "
     "write ONE clear paragraph explaining what's wrong in plain language for a fleet operator, "
-    "referencing the specific metric(s) and values involved. If there are no findings, reply "
+    "referencing the specific metric(s), values and DTC codes involved. If there are no findings, reply "
     "with exactly: no anomaly detected."
 )
 

@@ -5,7 +5,7 @@ from typing import Awaitable, Callable
 from mcp import ClientSession
 
 from agents.graph.activity_log import make_activity_hook
-from agents.graph.groq_tool_loop import run_tool_loop
+from agents.graph.tool_loop import run_tool_loop
 from agents.graph.state import GraphState
 
 SYSTEM_PROMPT = (
@@ -13,9 +13,10 @@ SYSTEM_PROMPT = (
     "issue's type and explanation, choose exactly one remediation action from: throttle_load, "
     "eco_mode, restart_subsystem, schedule_service - and call actions_trigger_self_heal with the "
     "asset_id and your chosen action. Prefer throttle_load, eco_mode, or restart_subsystem for "
-    "acute thermal, pressure, or vibration conditions that can plausibly clear by reducing load "
-    "or resetting a subsystem. Use schedule_service for degradation-type conditions (capacity/SOH "
-    "loss, cumulative wear) that a mode switch cannot fix. After calling the tool, reply with one "
+    "acute thermal or voltage conditions that can plausibly clear by reducing load or resetting a "
+    "subsystem. Use schedule_service for ECU diagnostic trouble codes (issue types starting with "
+    "'dtc_') and for degradation-type conditions (battery capacity/SOH loss, end of life) that a "
+    "mode switch cannot fix. After calling the tool, reply with one "
     "short sentence confirming the action taken."
 )
 

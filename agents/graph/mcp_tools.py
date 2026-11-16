@@ -1,4 +1,4 @@
-"""Bridges MCP tool schemas <-> Groq's OpenAI-compatible function-calling format,
+"""Bridges MCP tool schemas <-> the Cohere v2 function-calling format (same JSON-schema shape as OpenAI),
 and executes MCP tool calls, extracting FastMCP's structured (or JSON-text) result.
 """
 from __future__ import annotations
@@ -9,7 +9,7 @@ from typing import Any
 from mcp import ClientSession
 
 
-async def list_groq_tools(session: ClientSession) -> list[dict]:
+async def list_llm_tools(session: ClientSession) -> list[dict]:
     result = await session.list_tools()
     return [
         {

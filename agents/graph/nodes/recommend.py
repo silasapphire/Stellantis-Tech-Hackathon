@@ -5,7 +5,7 @@ from typing import Awaitable, Callable
 from mcp import ClientSession
 
 from agents.graph.activity_log import make_activity_hook
-from agents.graph.groq_tool_loop import run_tool_loop
+from agents.graph.tool_loop import run_tool_loop
 from agents.graph.state import GraphState
 
 SYSTEM_PROMPT = (
